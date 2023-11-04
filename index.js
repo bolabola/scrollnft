@@ -1,18 +1,22 @@
 const ethers = require('ethers');
-const { copyFileSync } = require('fs');
 
 const providerUrl = "wss://rpc.ankr.com/scroll/ws/96f299e6c2497e7fca7cfd26f31ef725dc468688c184bb9c30d480ae44cb5344";
+//const providerUrl = 'https://rpc.ankr.com/scroll'
+//const provider = new ethers.JsonRpcProvider(providerUrl)
 const provider = new ethers.WebSocketProvider(providerUrl);
-
 const args = process.argv.slice(2);
 
 const mnemonic = ethers.Mnemonic.fromPhrase(args[0]);
 
 //主钱包，用来生成 m/44'/60'/0'/0/{i} 路径地址
 //仅用于派生地址，不交互
-const mainWallet = ethers.HDNodeWallet.fromMnemonic(mnemonic, `m/44'/60'/0'/0`, provider);
+
+let mainWallet = ethers.HDNodeWallet.fromMnemonic(mnemonic, "m/44'/60'/0'/0");
+mainWallet = mainWallet.connect(provider)
+
 const wallet0 = mainWallet.deriveChild(0);
-console.log(0, wallet0.path)
+console.log(0, wallet0.address)
+
 //部署分发合约
 async function disp() {
     const tx = {
@@ -28,7 +32,7 @@ async function gen(start, amount) {
     let amounts = []
     let aa = ethers.parseEther('0.00015')
     for (let i = start; i < start + amount; i++) {
-        const childWallet = mainWallet.derivePath(`${i}`);
+        const childWallet = mainWallet.deriveChild(`${i}`);
         const childAddress = childWallet.address;
         addresses.push(childAddress)
         amounts.push(aa)
@@ -41,15 +45,14 @@ async function gen(start, amount) {
         data: calldata
     };
     const txResponse = await wallet0.sendTransaction(tx);
-    console.log(` ${txResponse.hash}`);
+    console.log(`over ${txResponse.hash}`);
 }
-//gen(1, 100)
+//gen(1, 200)
 
 async function deployContract(start, amount) {
     for (let i = start; i < start + amount; i++) {
-        const childWallet = mainWallet.derivePath(`m/44'/60'/0'/0/${i}`);
+        const childWallet = mainWallet.deriveChild(`${i}`);
         const childAddress = childWallet.address;
-        childWallet.connect(provider)
         const tx1 = {
             data: '0x608060405234801561001057600080fd5b5060008061001f6000396000f3fe'
         };
@@ -57,7 +60,7 @@ async function deployContract(start, amount) {
         console.log(`${i}: ${txResponse1.hash}`);
     }
 }
-//deployContract(1, 100)
+deployContract(1, 200)
 
 async function recovery(start, amount) {
     // const targetAddress = '0x54b6032105A6DBdcdb21aD4A2707A8909AF153D7'; // 将 ETH 转移到此地址
@@ -120,7 +123,7 @@ async function recovery(start, amount) {
         //console.log(`${i}: ${txResponse1.hash}`);
     }
 }
-recovery(1, 101)
+//recovery(1, 101)
 
 // async function main() {
 //     const tx = {
