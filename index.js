@@ -45,9 +45,10 @@ async function gen(start, amount) {
         data: calldata
     };
     const txResponse = await wallet0.sendTransaction(tx);
+    await txResponse.wait()
     console.log(`over ${txResponse.hash}`);
 }
-//gen(1, 200)
+
 
 async function deployContract(start, amount) {
     for (let i = start; i < start + amount; i++) {
@@ -57,10 +58,17 @@ async function deployContract(start, amount) {
             data: '0x608060405234801561001057600080fd5b5060008061001f6000396000f3fe'
         };
         const txResponse1 = await childWallet.sendTransaction(tx1);
-        console.log(`${i}: ${txResponse1.hash}`);
+        console.log(`${i}: ${childAddress} ${txResponse1.hash}`);
     }
 }
-deployContract(1, 200)
+
+async function main() {
+    //await gen(1, 100)
+    //await deployContract(1, 100)
+}
+
+main()
+
 
 async function recovery(start, amount) {
     // const targetAddress = '0x54b6032105A6DBdcdb21aD4A2707A8909AF153D7'; // 将 ETH 转移到此地址
